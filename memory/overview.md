@@ -8,3 +8,4 @@ type: project
 - **DNS:** Cloudflare CNAME `germana` → `moldluca.github.io`, DNS-only (proxied off), creat cu tokenul DNS moldluca.tech din vault. Același tipar ca [[arbori.moldluca.tech]].
 - **Conținut:** `index.html` singur; vocabularul e array-ul `V` din script. Prima listă: „Soziale Netzwerke” (22 cuvinte, din fișa de lucru, 2026-10-22).
 - Pentru o listă nouă: adaugi perechi în `V` (sau o pagină nouă), commit + push; Pages redeployează singur.
+- **Selecție cuvinte (2026-10-22):** lista de jos („Alege cuvintele") are bife; doar cuvintele bifate intră în flashcards. Butoane Toate/Niciunul. Selecția se ține în `localStorage['sel']` (indici în `V`, per browser) — dacă reordonezi `V`, selecțiile salvate se decalează.

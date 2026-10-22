@@ -15,6 +15,7 @@ h1{font-size:1.25rem;margin:0 0 4px;text-align:center}
 .bar{width:100%;max-width:440px;height:8px;background:var(--btn);border-radius:4px;overflow:hidden;margin-bottom:6px}
 .bar div{height:100%;background:var(--ok);width:0;transition:width .3s}
 .stats{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+#game{width:100%;max-width:440px}
 .scene{width:100%;max-width:440px;height:260px;perspective:1000px;cursor:pointer;user-select:none}
 .card{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
 .card.flip{transform:rotateY(180deg)}
@@ -34,7 +35,12 @@ details{width:100%;max-width:440px;margin-top:22px}
 summary{cursor:pointer;color:var(--muted)}
 table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
 td{padding:6px 4px;border-bottom:1px solid var(--btn)}
-td:first-child{font-weight:600}
+td:nth-child(2){font-weight:600}
+td:first-child{width:28px}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--ok)}
+tr{cursor:pointer}
+.sel{display:flex;gap:8px;margin-top:8px}
+.sel button{padding:8px;font-size:.85rem;font-weight:500}
 </style>
 </head>
 <body>
@@ -53,14 +59,16 @@ td:first-child{font-weight:600}
     <button class="ok" id="bOk">✓ Știu</button>
   </div>
 </div>
-<div class="done" id="done" hidden><div class="word">Gata! 🎉</div><div class="sub">Le-ai știut pe toate.</div></div>
+<div class="done" id="done" hidden><div class="word" id="doneT">Gata! 🎉</div><div class="sub" id="doneS">Le-ai știut pe toate.</div></div>
 
 <div class="row small">
   <button id="bDir"></button>
   <button id="bReset">↺ De la capăt</button>
 </div>
 
-<details><summary>Toată lista</summary><table id="list"></table></details>
+<details open><summary id="selT">Alege cuvintele</summary>
+<div class="sel"><button id="bAll">Toate</button><button id="bNone">Niciunul</button></div>
+<table id="list"></table></details>
 
 <script>
 const V=[
@@ -71,15 +79,26 @@ const V=[
 ["sichtbar","vizibil"],["der Filter","filtrul"],["der Alltag","viața de zi cu zi"],["passieren","a se întâmpla"],
 ["verstehen","a înțelege"],["das Erklärvideo","videoclipul explicativ"],["praktisch","practic"],
 ["abonnieren","a se abona"],["sich unterhalten","a se distra"]];
-let dir=0,queue=[],known=0;
+let dir=0,queue=[],known=0,total=0;
+// selected word indices, remembered per browser
+let sel=new Set(V.map((_,i)=>i));
+try{const s=JSON.parse(localStorage.getItem('sel'));if(Array.isArray(s))sel=new Set(s.filter(i=>i<V.length))}catch(e){}
 const $=id=>document.getElementById(id);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function reset(){queue=shuffle(V.map((_,i)=>i));known=0;show()}
+function reset(){queue=shuffle([...sel]);total=queue.length;known=0;show()}
+function save(){try{localStorage.setItem('sel',JSON.stringify([...sel]))}catch(e){}}
+function renderList(){
+  $('list').innerHTML=V.map(([d,r],i)=>'<tr data-i="'+i+'"><td><input type="checkbox"'+(sel.has(i)?' checked':'')+'></td><td>'+d+'</td><td>'+r+'</td></tr>').join('');
+  $('selT').textContent='Alege cuvintele ('+sel.size+' / '+V.length+')';
+}
 function show(){
   $('card').classList.remove('flip');
-  $('prog').style.width=(known/V.length*100)+'%';
-  $('stats').textContent=known+' / '+V.length+' știute · '+queue.length+' rămase';
-  const end=!queue.length;$('game').hidden=end;$('done').hidden=!end;if(end)return;
+  $('prog').style.width=(total?known/total*100:0)+'%';
+  $('stats').textContent=known+' / '+total+' știute · '+queue.length+' rămase';
+  const end=!queue.length;$('game').hidden=end;$('done').hidden=!end;
+  $('doneT').textContent=total?'Gata! 🎉':'Niciun cuvânt ales';
+  $('doneS').textContent=total?'Le-ai știut pe toate.':'Bifează cuvintele de mai jos.';
+  if(end)return;
   const [de,ro]=V[queue[0]];
   setTimeout(()=>{
     $('l1').textContent=dir?'Română':'Deutsch';$('w1').textContent=dir?ro:de;
@@ -93,7 +112,10 @@ $('bNo').onclick=()=>{const i=queue.shift();queue.splice(Math.min(3,queue.length
 $('bDir').onclick=()=>{dir^=1;show()};
 $('bReset').onclick=reset;
 document.onkeydown=e=>{if(e.key===' '){e.preventDefault();$('scene').click()}if(e.key==='ArrowRight')$('bOk').click();if(e.key==='ArrowLeft')$('bNo').click()};
-$('list').innerHTML=V.map(([d,r])=>'<tr><td>'+d+'</td><td>'+r+'</td></tr>').join('');
+$('list').onclick=e=>{const tr=e.target.closest('tr');if(!tr)return;const i=+tr.dataset.i;sel.has(i)?sel.delete(i):sel.add(i);save();renderList();reset()};
+$('bAll').onclick=()=>{sel=new Set(V.map((_,i)=>i));save();renderList();reset()};
+$('bNone').onclick=()=>{sel=new Set();save();renderList();reset()};
+renderList();
 $('bDir').textContent='⇄ DE → RO';reset();
 </script>
 </body>
