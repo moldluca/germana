@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashcards Germană</title>
+<meta name="description" content="Vocabular: Soziale Netzwerke (germană – română)">
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--back:#1f3a5f;--backText:#fff;--text:#1d1d1f;--muted:#6b6b70;--ok:#2e7d4f;--no:#b23b3b;--btn:#e7e2d6}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--card:#232327;--back:#2f5a8f;--backText:#fff;--text:#f2f2f2;--muted:#a0a0a8;--btn:#2c2c31}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
+h1{font-size:1.25rem;margin:0 0 4px;text-align:center}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:16px;text-align:center}
+.bar{width:100%;max-width:440px;height:8px;background:var(--btn);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.bar div{height:100%;background:var(--ok);width:0;transition:width .3s}
+.stats{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+.scene{width:100%;max-width:440px;height:260px;perspective:1000px;cursor:pointer;user-select:none}
+.card{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.front{background:var(--card)}
+.backf{background:var(--back);color:var(--backText);transform:rotateY(180deg)}
+.lang{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:10px}
+.word{font-size:1.9rem;font-weight:650;line-height:1.25}
+.hint{position:absolute;bottom:12px;font-size:.75rem;opacity:.5}
+.row{display:flex;gap:10px;margin-top:16px;width:100%;max-width:440px}
+button{flex:1;border:0;border-radius:12px;padding:14px 10px;font-size:1rem;font-weight:600;background:var(--btn);color:var(--text);cursor:pointer}
+.no{background:var(--no);color:#fff}.ok{background:var(--ok);color:#fff}
+.small button{font-size:.85rem;padding:10px 6px;font-weight:500}
+.done{text-align:center;max-width:440px}
+.done .word{font-size:1.6rem;margin:30px 0 10px}
+details{width:100%;max-width:440px;margin-top:22px}
+summary{cursor:pointer;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+td{padding:6px 4px;border-bottom:1px solid var(--btn)}
+td:first-child{font-weight:600}
+</style>
+</head>
+<body>
+<h1>Soziale Netzwerke 📱</h1>
+<div class="sub">Vocabular germană – română · atinge cartonașul ca să-l întorci</div>
+<div class="bar"><div id="prog"></div></div>
+<div class="stats" id="stats"></div>
+
+<div id="game">
+  <div class="scene" id="scene"><div class="card" id="card">
+    <div class="face front"><div class="lang" id="l1"></div><div class="word" id="w1"></div><div class="hint">atinge pentru răspuns</div></div>
+    <div class="face backf"><div class="lang" id="l2"></div><div class="word" id="w2"></div></div>
+  </div></div>
+  <div class="row">
+    <button class="no" id="bNo">✗ Nu știu</button>
+    <button class="ok" id="bOk">✓ Știu</button>
+  </div>
+</div>
+<div class="done" id="done" hidden><div class="word">Gata! 🎉</div><div class="sub">Le-ai știut pe toate.</div></div>
+
+<div class="row small">
+  <button id="bDir"></button>
+  <button id="bReset">↺ De la capăt</button>
+</div>
+
+<details><summary>Toată lista</summary><table id="list"></table></details>
+
+<script>
+const V=[
+["das soziale Netzwerk","rețeaua de socializare"],["benutzen","a folosi"],["die App","aplicația"],
+["die Nachricht","mesajul"],["posten","a posta"],["die Story","povestea / story-ul"],
+["der Freund / die Freundin","prietenul / prietena"],["folgen","a urmări"],["Spaß machen","a fi distractiv"],
+["lustig","amuzant"],["der Tanz","dansul"],["entdecken","a descoperi"],["selbst","însuși / singur"],
+["sichtbar","vizibil"],["der Filter","filtrul"],["der Alltag","viața de zi cu zi"],["passieren","a se întâmpla"],
+["verstehen","a înțelege"],["das Erklärvideo","videoclipul explicativ"],["praktisch","practic"],
+["abonnieren","a se abona"],["sich unterhalten","a se distra"]];
+let dir=0,queue=[],known=0;
+const $=id=>document.getElementById(id);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function reset(){queue=shuffle(V.map((_,i)=>i));known=0;show()}
+function show(){
+  $('card').classList.remove('flip');
+  $('prog').style.width=(known/V.length*100)+'%';
+  $('stats').textContent=known+' / '+V.length+' știute · '+queue.length+' rămase';
+  const end=!queue.length;$('game').hidden=end;$('done').hidden=!end;if(end)return;
+  const [de,ro]=V[queue[0]];
+  setTimeout(()=>{
+    $('l1').textContent=dir?'Română':'Deutsch';$('w1').textContent=dir?ro:de;
+    $('l2').textContent=dir?'Deutsch':'Română';$('w2').textContent=dir?de:ro;
+  },queue.length?150:0);
+  $('bDir').textContent=dir?'⇄ RO → DE':'⇄ DE → RO';
+}
+$('scene').onclick=()=>$('card').classList.toggle('flip');
+$('bOk').onclick=()=>{queue.shift();known++;show()};
+$('bNo').onclick=()=>{const i=queue.shift();queue.splice(Math.min(3,queue.length),0,i);show()};
+$('bDir').onclick=()=>{dir^=1;show()};
+$('bReset').onclick=reset;
+document.onkeydown=e=>{if(e.key===' '){e.preventDefault();$('scene').click()}if(e.key==='ArrowRight')$('bOk').click();if(e.key==='ArrowLeft')$('bNo').click()};
+$('list').innerHTML=V.map(([d,r])=>'<tr><td>'+d+'</td><td>'+r+'</td></tr>').join('');
+$('bDir').textContent='⇄ DE → RO';reset();
+</script>
+</body>
+</html>
